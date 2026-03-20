@@ -1,0 +1,72 @@
+<!-- Search + Sort -->
+<div class="flex gap-2 mb-3">
+  <input type="text" name="search" placeholder="Search chats..."
+         value="{{ search }}"
+         class="input input-bordered input-sm flex-1"
+         hx-get="/api/chats/{{ account }}"
+         hx-trigger="keyup changed delay:300ms"
+         hx-target="#chat-list-container"
+         hx-swap="innerHTML"
+         hx-include="this" />
+  <select class="select select-bordered select-sm w-24"
+          hx-get="/api/chats/{{ account }}"
+          hx-trigger="change"
+          hx-target="#chat-list-container"
+          hx-swap="innerHTML"
+          name="sort">
+    <option value="recent" {% if sort == 'recent' %}selected{% endif %}>Recent</option>
+    <option value="name" {% if sort == 'name' %}selected{% endif %}>A-Z</option>
+    <option value="unread" {% if sort == 'unread' %}selected{% endif %}>Unread</option>
+  </select>
+</div>
+
+{% if chats %}
+<p class="text-xs opacity-50 mb-2">{{ total }} chats</p>
+<ul class="menu menu-sm bg-base-200 rounded-box max-h-96 overflow-y-auto flex-nowrap">
+  {% for chat in chats %}
+  <li>
+    <a hx-get="/api/chats/{{ account }}/{{ chat.id }}/messages"
+       hx-target="#message-preview-container"
+       hx-swap="innerHTML"
+       hx-indicator="#msg-spinner"
+       class="flex justify-between items-center"
+       data-chat-id="{{ chat.id }}"
+       data-chat-title="{{ chat.title }}"
+       onclick="document.querySelectorAll('#chat-list-container a.active').forEach(function(a){ a.classList.remove('active') }); this.classList.add('active')">
+      <div class="flex items-center gap-2 min-w-0">
+        <span class="badge badge-xs
+          {% if chat.type == 'user' %}badge-primary
+          {% elif chat.type == 'group' or chat.type == 'supergroup' %}badge-secondary
+          {% else %}badge-accent{% endif %}">
+          {% if chat.type == 'user' %}U
+          {% elif chat.type == 'group' or chat.type == 'supergroup' %}G
+          {% else %}C{% endif %}
+        </span>
+        <span class="truncate">{{ chat.title }}</span>
+      </div>
+      <div class="flex items-center gap-2 flex-shrink-0">
+        {% if chat.unread_count > 0 %}
+        <span class="badge badge-xs badge-warning">{{ chat.unread_count }}</span>
+        {% endif %}
+        {% if chat.last_message_date %}
+        <span class="text-xs opacity-50">{{ chat.last_message_date.strftime('%m/%d') }}</span>
+        {% endif %}
+      </div>
+    </a>
+  </li>
+  {% endfor %}
+</ul>
+{% if has_more %}
+<div class="flex justify-center mt-2">
+  <button class="btn btn-ghost btn-xs"
+          hx-get="/api/chats/{{ account }}?offset={{ offset + limit }}&limit={{ limit }}&search={{ search }}&sort={{ sort }}"
+          hx-target="#chat-list-container"
+          hx-swap="beforeend"
+          hx-select="ul li">
+    Load More
+  </button>
+</div>
+{% endif %}
+{% else %}
+<p class="text-sm opacity-50 text-center py-4">No chats found.</p>
+{% endif %}

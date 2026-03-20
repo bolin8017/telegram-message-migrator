@@ -1,0 +1,194 @@
+<div id="transfer-progress" role="region" aria-label="Transfer progress">
+  <!-- Progress bar -->
+  <div class="mb-4">
+    <div class="flex justify-between text-sm mb-1">
+      <span id="progress-label" aria-live="polite">Starting...</span>
+      <span id="progress-pct" aria-live="polite">0%</span>
+    </div>
+    <progress id="progress-bar" class="progress progress-primary w-full" value="0" max="100"
+              role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></progress>
+    <div class="flex justify-between text-xs opacity-60 mt-1">
+      <span id="progress-counts">0 / 0</span>
+      <span id="progress-eta"></span>
+    </div>
+  </div>
+
+  <!-- Rate limit warning -->
+  <div id="rate-limit-banner" class="alert alert-warning text-sm py-2 mb-4 hidden" role="alert">
+    <span id="rate-limit-text">Rate limited...</span>
+  </div>
+
+  <!-- Controls -->
+  <div class="flex gap-2 mb-4" id="transfer-controls">
+    <button class="btn btn-outline btn-sm" id="btn-pause"
+            aria-label="Pause transfer"
+            hx-post="/api/transfer/jobs/pause" hx-swap="none"
+            onclick="this.classList.add('hidden'); document.getElementById('btn-resume').classList.remove('hidden')">
+      Pause
+    </button>
+    <button class="btn btn-outline btn-sm hidden" id="btn-resume"
+            aria-label="Resume transfer"
+            hx-post="/api/transfer/jobs/resume" hx-swap="none"
+            onclick="this.classList.add('hidden'); document.getElementById('btn-pause').classList.remove('hidden')">
+      Resume
+    </button>
+    <button class="btn btn-outline btn-error btn-sm"
+            aria-label="Cancel transfer"
+            hx-post="/api/transfer/jobs/cancel" hx-swap="none"
+            hx-confirm="Cancel this transfer?">
+      Cancel
+    </button>
+  </div>
+
+  <!-- Message log -->
+  <div class="bg-base-200 rounded-lg p-3 max-h-60 overflow-y-auto font-mono text-xs" id="message-log">
+    <p class="opacity-50">Waiting for messages...</p>
+  </div>
+
+  <!-- Error summary -->
+  <details class="mt-3 hidden" id="error-details">
+    <summary class="text-sm text-error cursor-pointer">Errors (<span id="error-count">0</span>)</summary>
+    <ul class="text-xs mt-1 space-y-1" id="error-list"></ul>
+  </details>
+
+  <!-- Completion summary (hidden until done) -->
+  <div id="completion-summary" class="hidden mt-4">
+    <div class="alert alert-success">
+      <div class="text-sm" id="summary-text"></div>
+    </div>
+  </div>
+</div>
+
+<script>
+// Native EventSource — htmx-ext-sse only registers listeners for events
+// referenced in sse-swap attributes, so named events (progress, job_completed, etc.)
+// were silently dropped. Native EventSource handles them correctly.
+(function() {
+  var es = new EventSource('/api/transfer/progress/{{ job_id }}');
+
+  function handle(type, d) {
+    if (type === 'progress' && d.percent !== undefined) {
+      var bar = document.getElementById('progress-bar');
+      var pct = Math.round(d.percent);
+      bar.value = pct;
+      bar.setAttribute('aria-valuenow', pct);
+      // If total is 0 (unreliable for some chats), don't show %
+      if (d.total_messages > 0) {
+        document.getElementById('progress-pct').textContent = pct + '%';
+      } else {
+        document.getElementById('progress-pct').textContent = '';
+      }
+      var counts = d.transferred_count + ' transferred';
+      if (d.skipped_count > 0) counts += ', ' + d.skipped_count + ' skipped';
+      if (d.failed_count > 0) counts += ', ' + d.failed_count + ' failed';
+      if (d.total_messages > 0) counts += ' (of ' + d.total_messages + ')';
+      document.getElementById('progress-counts').textContent = counts;
+      document.getElementById('progress-label').textContent = 'Transferring...';
+      var eta = document.getElementById('progress-eta');
+      if (d.estimated_remaining_seconds && d.estimated_remaining_seconds > 0) {
+        var m = Math.floor(d.estimated_remaining_seconds / 60);
+        var s = Math.round(d.estimated_remaining_seconds % 60);
+        eta.textContent = 'ETA: ' + m + 'm ' + s + 's';
+      } else {
+        eta.textContent = '';
+      }
+    }
+
+    else if (type === 'file_progress') {
+      var label = d.phase === 'download' ? 'Downloading' : 'Uploading';
+      document.getElementById('progress-label').textContent =
+        label + ' #' + d.message_id + ' — ' + d.percent + '% of ' + d.size_mb + ' MB';
+    }
+
+    else if (type === 'rate_limited') {
+      document.getElementById('rate-limit-banner').classList.remove('hidden');
+      document.getElementById('rate-limit-text').textContent = 'Rate limited — waiting ' + d.wait_seconds + 's...';
+      document.getElementById('progress-bar').classList.replace('progress-primary', 'progress-warning');
+    }
+
+    else if (type === 'message_transferred') {
+      var log = document.getElementById('message-log');
+      var placeholder = log.querySelector('.opacity-50');
+      if (placeholder) placeholder.remove();
+      var p = document.createElement('p');
+      p.textContent = 'Transferred #' + d.message_id;
+      log.appendChild(p);
+      log.scrollTop = log.scrollHeight;
+      document.getElementById('rate-limit-banner').classList.add('hidden');
+      document.getElementById('progress-bar').classList.replace('progress-warning', 'progress-primary');
+    }
+
+    else if (type === 'message_failed') {
+      var det = document.getElementById('error-details');
+      det.classList.remove('hidden');
+      var cnt = document.getElementById('error-count');
+      cnt.textContent = parseInt(cnt.textContent) + 1;
+      var li = document.createElement('li');
+      li.className = 'text-error';
+      li.textContent = '#' + d.message_id + ' — ' + d.error;
+      document.getElementById('error-list').appendChild(li);
+    }
+
+    else if (type === 'job_completed') {
+      document.getElementById('transfer-controls').classList.add('hidden');
+      document.getElementById('progress-label').textContent = 'Completed';
+      document.getElementById('progress-bar').value = 100;
+      document.getElementById('progress-pct').textContent = '100%';
+      var s = document.getElementById('completion-summary');
+      s.classList.remove('hidden');
+      document.getElementById('summary-text').textContent =
+        'Done! ' + d.transferred + ' transferred, ' + d.failed + ' failed, ' +
+        d.skipped + ' skipped. Time: ' + d.elapsed + 's';
+      es.close();
+    }
+
+    else if (type === 'job_failed') {
+      document.getElementById('transfer-controls').classList.add('hidden');
+      document.getElementById('progress-label').textContent = 'Failed';
+      document.getElementById('progress-bar').classList.replace('progress-primary', 'progress-error');
+      var s = document.getElementById('completion-summary');
+      s.classList.remove('hidden');
+      s.querySelector('.alert').classList.replace('alert-success', 'alert-error');
+      document.getElementById('summary-text').textContent = 'Transfer failed: ' + (d.error || 'Unknown error');
+      es.close();
+    }
+
+    else if (type === 'job_cancelled') {
+      document.getElementById('transfer-controls').classList.add('hidden');
+      document.getElementById('progress-label').textContent = 'Cancelled';
+      var s = document.getElementById('completion-summary');
+      s.classList.remove('hidden');
+      s.querySelector('.alert').classList.replace('alert-success', 'alert-warning');
+      document.getElementById('summary-text').textContent =
+        'Cancelled. ' + d.transferred + ' transferred, ' + d.failed + ' failed, ' +
+        d.skipped + ' skipped. Time: ' + d.elapsed + 's';
+      es.close();
+    }
+
+    else if (type === 'auto_paused') {
+      document.getElementById('btn-pause').classList.add('hidden');
+      document.getElementById('btn-resume').classList.remove('hidden');
+      document.getElementById('progress-label').textContent = 'Auto-paused (rate limit protection)';
+    }
+  }
+
+  // Register all named SSE event types
+  ['progress', 'rate_limited', 'message_transferred', 'message_failed',
+   'message_skipped', 'job_completed', 'job_failed', 'job_cancelled',
+   'auto_paused', 'daily_cap', 'job_paused', 'job_resumed', 'file_progress'].forEach(function(type) {
+    es.addEventListener(type, function(e) {
+      var d;
+      try { d = JSON.parse(e.data); } catch(err) { return; }
+      handle(type, d);
+    });
+  });
+
+  es.onerror = function() {
+    // If the job already finished, close the reconnecting EventSource
+    var summary = document.getElementById('completion-summary');
+    if (summary && !summary.classList.contains('hidden')) {
+      es.close();
+    }
+  };
+})();
+</script>

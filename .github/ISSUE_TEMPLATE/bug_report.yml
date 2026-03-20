@@ -1,0 +1,38 @@
+name: Bug Report
+description: Report a bug or unexpected behavior
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: What happened?
+      placeholder: Describe the bug clearly.
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      placeholder: |
+        1. Go to '...'
+        2. Click on '...'
+        3. See error
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      placeholder: What should have happened?
+  - type: input
+    id: version
+    attributes:
+      label: Version
+      placeholder: e.g. 0.1.0
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Transfer mode
+      options:
+        - Forward
+        - Copy
+        - Live Mode
+        - N/A

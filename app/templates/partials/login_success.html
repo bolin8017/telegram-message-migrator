@@ -1,0 +1,16 @@
+<div class="flex flex-col gap-2" hx-on::load="setTimeout(function(){ location.reload(); }, 500)">
+  <div class="alert alert-success text-sm py-2">
+    <span>Logged in successfully!</span>
+  </div>
+  <p class="text-sm">
+    <strong>{{ user.name }}</strong>
+    {% if user.username %}(@{{ user.username }}){% endif %}
+  </p>
+  <p class="text-xs opacity-60">{{ user.phone }}</p>
+  <button class="btn btn-outline btn-sm btn-error mt-1"
+          hx-post="/api/auth/logout/{{ account }}"
+          hx-swap="none"
+          hx-on::after-request="location.reload()">
+    Logout
+  </button>
+</div>

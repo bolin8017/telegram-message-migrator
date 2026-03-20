@@ -1,0 +1,85 @@
+<div id="live-monitor">
+  <div class="flex items-center justify-between mb-3">
+    <div class="flex items-center gap-2">
+      <span class="loading loading-ring loading-sm text-success" id="live-indicator"></span>
+      <span class="text-sm font-medium" id="live-label">Listening for new messages...</span>
+    </div>
+    <button class="btn btn-outline btn-error btn-xs"
+            hx-post="/api/live/stop" hx-swap="none"
+            hx-on::after-request="document.getElementById('live-indicator').classList.add('hidden'); document.getElementById('live-label').textContent = 'Stopped';">
+      Stop
+    </button>
+  </div>
+
+  <!-- Stats -->
+  <div class="stats stats-horizontal shadow w-full text-center mb-3">
+    <div class="stat py-2 px-4">
+      <div class="stat-title text-xs">Forwarded</div>
+      <div class="stat-value text-lg text-success" id="live-forwarded">0</div>
+    </div>
+    <div class="stat py-2 px-4">
+      <div class="stat-title text-xs">Skipped</div>
+      <div class="stat-value text-lg" id="live-skipped">0</div>
+    </div>
+    <div class="stat py-2 px-4">
+      <div class="stat-title text-xs">Failed</div>
+      <div class="stat-value text-lg text-error" id="live-failed">0</div>
+    </div>
+  </div>
+
+  <!-- Recent activity log -->
+  <div class="bg-base-200 rounded-lg p-3 max-h-48 overflow-y-auto font-mono text-xs" id="live-log">
+    <p class="opacity-50">Waiting for incoming messages...</p>
+  </div>
+</div>
+
+<script>
+(function() {
+  var es = new EventSource('/api/live/events');
+  var log = document.getElementById('live-log');
+
+  function appendLog(text) {
+    var placeholder = log.querySelector('.opacity-50');
+    if (placeholder) placeholder.remove();
+    var p = document.createElement('p');
+    p.textContent = new Date().toLocaleTimeString() + ' — ' + text;
+    log.appendChild(p);
+    log.scrollTop = log.scrollHeight;
+  }
+
+  es.addEventListener('live_message', function(e) {
+    var d = JSON.parse(e.data);
+    var el = document.getElementById('live-forwarded');
+    el.textContent = parseInt(el.textContent) + 1;
+    appendLog('Forwarded #' + d.message_id);
+  });
+
+  es.addEventListener('live_error', function(e) {
+    var d = JSON.parse(e.data);
+    var el = document.getElementById('live-failed');
+    el.textContent = parseInt(el.textContent) + 1;
+    appendLog('Failed #' + d.message_id + ': ' + d.error);
+    if (d.fatal) {
+      document.getElementById('live-indicator').classList.add('hidden');
+      document.getElementById('live-label').textContent = 'Stopped (fatal error)';
+      es.close();
+    }
+  });
+
+  es.addEventListener('live_rate_limited', function(e) {
+    var d = JSON.parse(e.data);
+    appendLog('Rate limited — waiting ' + d.wait_seconds + 's');
+  });
+
+  es.addEventListener('live_stopped', function(e) {
+    document.getElementById('live-indicator').classList.add('hidden');
+    document.getElementById('live-label').textContent = 'Stopped';
+    es.close();
+  });
+
+  es.onerror = function() {
+    if (!document.getElementById('live-indicator').classList.contains('hidden')) return;
+    es.close();
+  };
+})();
+</script>

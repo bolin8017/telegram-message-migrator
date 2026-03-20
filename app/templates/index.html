@@ -1,0 +1,231 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- Onboarding -->
+{% include "partials/onboarding.html" %}
+
+<!-- Step Indicator -->
+<ul class="steps steps-horizontal w-full mb-8">
+  <li class="step step-primary" id="step-ind-0">Login</li>
+  <li class="step" id="step-ind-1">Browse</li>
+  <li class="step" id="step-ind-2">Configure</li>
+  <li class="step" id="step-ind-3">Transfer</li>
+</ul>
+
+<!-- Step 0: Dual Account Login -->
+<section id="step-0">
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <!-- Account A -->
+    <div class="card bg-base-100 shadow-md">
+      <div class="card-body">
+        <h2 class="card-title">
+          Account A
+          <span class="badge badge-sm
+            {% if auth.account_a %}badge-success{% else %}badge-ghost{% endif %}">
+            {% if auth.account_a %}Connected{% else %}Not connected{% endif %}
+          </span>
+        </h2>
+        {% if auth.account_a %}
+          <p class="text-sm opacity-70">{{ auth.account_a.name }} ({{ auth.account_a.phone }})</p>
+          <button class="btn btn-outline btn-sm btn-error mt-2"
+                  hx-post="/api/auth/logout/account_a"
+                  hx-swap="none"
+                  hx-confirm="Log out Account A?"
+                  hx-on::after-request="location.reload()">
+            Logout
+          </button>
+        {% else %}
+          <div id="login-form-a"
+               hx-get="/api/auth/login-form/account_a"
+               hx-trigger="load"
+               hx-swap="innerHTML">
+            <p class="text-sm opacity-50">Loading login form...</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+
+    <!-- Account B -->
+    <div class="card bg-base-100 shadow-md">
+      <div class="card-body">
+        <h2 class="card-title">
+          Account B
+          <span class="badge badge-sm
+            {% if auth.account_b %}badge-success{% else %}badge-ghost{% endif %}">
+            {% if auth.account_b %}Connected{% else %}Not connected{% endif %}
+          </span>
+        </h2>
+        {% if auth.account_b %}
+          <p class="text-sm opacity-70">{{ auth.account_b.name }} ({{ auth.account_b.phone }})</p>
+          <button class="btn btn-outline btn-sm btn-error mt-2"
+                  hx-post="/api/auth/logout/account_b"
+                  hx-swap="none"
+                  hx-confirm="Log out Account B?"
+                  hx-on::after-request="location.reload()">
+            Logout
+          </button>
+        {% else %}
+          <div id="login-form-b"
+               hx-get="/api/auth/login-form/account_b"
+               hx-trigger="load"
+               hx-swap="innerHTML">
+            <p class="text-sm opacity-50">Loading login form...</p>
+          </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+
+  <!-- Next button -->
+  {% if auth.account_a and auth.account_b %}
+  <div class="flex justify-end mt-6">
+    <button class="btn btn-primary" onclick="showStep(1)">
+      Next: Browse Chats &rarr;
+    </button>
+  </div>
+  {% else %}
+  <div class="alert alert-info mt-6">
+    <span>Please log in to both accounts to continue.</span>
+  </div>
+  {% endif %}
+</section>
+
+<!-- Step 1: Chat Browser -->
+<section id="step-1" class="hidden">
+  <div class="grid grid-cols-1 lg:grid-cols-5 gap-4">
+    <!-- Chat list (left 2/5) -->
+    <div class="lg:col-span-2 card bg-base-100 shadow-md">
+      <div class="card-body p-4">
+        <h2 class="card-title text-sm mb-2">Account A — Chats</h2>
+        <div id="chat-list-container"
+             hx-get="/api/chats/account_a"
+             hx-trigger="intersect once"
+             hx-swap="innerHTML">
+          <p class="text-sm opacity-50">Loading chats...</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Message preview (right 3/5) -->
+    <div class="lg:col-span-3 card bg-base-100 shadow-md">
+      <div class="card-body p-4">
+        <div class="flex items-center justify-between mb-2">
+          <h2 class="card-title text-sm">Messages</h2>
+          <span id="msg-spinner" class="loading loading-spinner loading-xs htmx-indicator"></span>
+        </div>
+        <div id="message-preview-container" class="max-h-[500px] overflow-y-auto">
+          <p class="text-sm opacity-50 text-center py-8">Select a chat to preview messages.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-between mt-6">
+    <button class="btn btn-ghost" onclick="showStep(0)">&larr; Back</button>
+    <button class="btn btn-primary" onclick="selectChatForTransfer()">Next: Configure &rarr;</button>
+  </div>
+</section>
+
+<!-- Step 2: Transfer Config -->
+<section id="step-2" class="hidden">
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body">
+      <!-- Mode tabs: Batch Transfer vs Live Mode -->
+      <div role="tablist" class="tabs tabs-boxed mb-4">
+        <a role="tab" class="tab tab-active" id="tab-batch"
+           onclick="document.getElementById('tab-batch').classList.add('tab-active'); document.getElementById('tab-live').classList.remove('tab-active'); document.getElementById('batch-config').classList.remove('hidden'); document.getElementById('live-config').classList.add('hidden')">
+          Batch Transfer
+        </a>
+        <a role="tab" class="tab" id="tab-live"
+           onclick="document.getElementById('tab-live').classList.add('tab-active'); document.getElementById('tab-batch').classList.remove('tab-active'); document.getElementById('live-config').classList.remove('hidden'); document.getElementById('batch-config').classList.add('hidden')">
+          Live Mode
+        </a>
+      </div>
+
+      <!-- Batch transfer config -->
+      <div id="batch-config">
+        <div id="transfer-config-container">
+          <p class="opacity-50 text-sm">Select a chat first.</p>
+        </div>
+      </div>
+
+      <!-- Live mode config -->
+      <div id="live-config" class="hidden">
+        <div id="live-config-container">
+          <p class="opacity-50 text-sm">Select a chat first.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-start mt-6">
+    <button class="btn btn-ghost" onclick="showStep(1)">&larr; Back</button>
+  </div>
+</section>
+
+<!-- Step 3: Transfer Progress -->
+<section id="step-3" class="hidden">
+  <div class="card bg-base-100 shadow-md">
+    <div class="card-body">
+      <h2 class="card-title text-sm mb-4">Transfer Progress</h2>
+      <div id="step-3-content">
+        <p class="opacity-50 text-sm">Transfer will start after configuration.</p>
+      </div>
+    </div>
+  </div>
+  <div class="flex justify-start mt-6">
+    <button class="btn btn-ghost" onclick="showStep(1)">&larr; New Transfer</button>
+  </div>
+</section>
+
+<!-- Transfer History (always visible at bottom) -->
+<section class="mt-8">
+  <details class="collapse collapse-arrow bg-base-100 shadow-md rounded-lg">
+    <summary class="collapse-title text-sm font-medium"
+             hx-get="/api/transfer/history"
+             hx-target="#history-container"
+             hx-swap="innerHTML"
+             hx-trigger="click once">
+      Transfer History
+    </summary>
+    <div class="collapse-content" id="history-container">
+      <p class="text-sm opacity-50 py-2">Click to load...</p>
+    </div>
+  </details>
+</section>
+
+<script>
+function showStep(n) {
+  for (var i = 0; i < 4; i++) {
+    document.getElementById('step-' + i).classList.toggle('hidden', i !== n);
+    var ind = document.getElementById('step-ind-' + i);
+    if (i <= n) ind.classList.add('step-primary');
+    else ind.classList.remove('step-primary');
+  }
+}
+
+function selectChatForTransfer() {
+  var active = document.querySelector('#chat-list-container a.active, #chat-list-container a[aria-selected=true]');
+  var chatId = 0;
+  var chatTitle = '';
+  if (active) {
+    chatId = active.dataset.chatId || 0;
+    chatTitle = active.dataset.chatTitle || '';
+  }
+  if (!chatId) {
+    alert('Please select a chat first.');
+    return;
+  }
+  var params = 'source_chat_id=' + chatId + '&source_chat_title=' + encodeURIComponent(chatTitle);
+  htmx.ajax('GET', '/api/transfer/config-form?' + params, {target: '#transfer-config-container', swap: 'innerHTML'});
+  htmx.ajax('GET', '/api/live/config-form?' + params, {target: '#live-config-container', swap: 'innerHTML'});
+  showStep(2);
+}
+
+// On page load: if a transfer is active, recover the progress view
+htmx.ajax('GET', '/api/transfer/active-job', {target: '#step-3-content', swap: 'innerHTML'}).then(function() {
+  if (document.getElementById('step-3-content').children.length > 0 &&
+      document.getElementById('step-3-content').querySelector('#transfer-progress')) {
+    showStep(3);
+  }
+});
+</script>
+{% endblock %}

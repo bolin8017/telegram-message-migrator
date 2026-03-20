@@ -1,0 +1,57 @@
+{% if messages %}
+<div class="space-y-1">
+  {% for msg in messages %}
+  <div class="flex gap-3 py-2 px-3 rounded hover:bg-base-200 text-sm">
+    <!-- Time -->
+    <span class="text-xs opacity-40 flex-shrink-0 w-12 pt-0.5">
+      {{ msg.date.strftime('%H:%M') }}
+    </span>
+
+    <!-- Content -->
+    <div class="min-w-0 flex-1">
+      <span class="font-medium text-xs opacity-70">{{ msg.sender_name }}</span>
+
+      {% if msg.text %}
+      <p class="break-words opacity-90">{{ msg.text[:200] }}{% if msg.text|length > 200 %}...{% endif %}</p>
+      {% endif %}
+
+      {% if msg.has_media %}
+      <span class="badge badge-xs badge-outline mt-1">
+        {% if msg.media_type == 'photo' %}Photo
+        {% elif msg.media_type == 'video' %}Video
+        {% elif msg.media_type == 'voice' %}Voice
+        {% elif msg.media_type == 'audio' %}Audio
+        {% elif msg.media_type == 'sticker' %}Sticker
+        {% elif msg.media_type == 'animation' %}GIF
+        {% elif msg.media_type == 'video_note' %}Video Note
+        {% elif msg.media_type == 'document' %}
+          {{ msg.media_filename or 'Document' }}
+        {% else %}Media
+        {% endif %}
+        {% if msg.media_size %}
+          ({{ (msg.media_size / 1024 / 1024)|round(1) }}MB)
+        {% endif %}
+      </span>
+      {% endif %}
+    </div>
+
+    <!-- Message ID -->
+    <span class="text-xs opacity-30 flex-shrink-0">#{{ msg.id }}</span>
+  </div>
+  {% endfor %}
+</div>
+
+{% if has_more %}
+<!-- Infinite scroll trigger -->
+<div hx-get="/api/chats/{{ account }}/{{ chat_id }}/messages?offset_id={{ last_id }}&date_from={{ date_from }}&date_to={{ date_to }}"
+     hx-trigger="revealed"
+     hx-swap="outerHTML"
+     hx-indicator="#msg-spinner"
+     class="text-center py-4">
+  <span class="loading loading-dots loading-sm"></span>
+</div>
+{% endif %}
+
+{% else %}
+<p class="text-sm opacity-50 text-center py-8">No messages found.</p>
+{% endif %}

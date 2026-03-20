@@ -1,0 +1,38 @@
+<form hx-post="/api/auth/submit-code/{{ account }}"
+      hx-target="#login-form-{{ account[-1] }}"
+      hx-swap="innerHTML"
+      hx-indicator="#spinner-code-{{ account }}">
+  <input type="hidden" name="phone" value="{{ phone }}" />
+  <input type="hidden" name="phone_code_hash" value="{{ phone_code_hash }}" />
+
+  <div class="form-control gap-3">
+    <p class="text-sm opacity-70">Code sent to <strong>{{ phone }}</strong></p>
+
+    <label class="label">
+      <span class="label-text">Verification Code</span>
+    </label>
+    <input type="text" name="code" placeholder="12345"
+           class="input input-bordered w-full" required
+           autocomplete="one-time-code" inputmode="numeric"
+           maxlength="6" autofocus />
+
+    {% if error %}
+    <div class="alert alert-error text-sm py-2">
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <div class="flex gap-2">
+      <button type="submit" class="btn btn-primary btn-sm flex-1">
+        <span id="spinner-code-{{ account }}" class="loading loading-spinner loading-xs htmx-indicator"></span>
+        Verify
+      </button>
+      <button type="button" class="btn btn-ghost btn-sm"
+              hx-get="/api/auth/login-form/{{ account }}"
+              hx-target="#login-form-{{ account[-1] }}"
+              hx-swap="innerHTML">
+        Back
+      </button>
+    </div>
+  </div>
+</form>

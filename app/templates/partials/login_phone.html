@@ -1,0 +1,24 @@
+<form hx-post="/api/auth/send-code/{{ account }}"
+      hx-target="#login-form-{{ account[-1] }}"
+      hx-swap="innerHTML"
+      hx-indicator="#spinner-{{ account }}">
+  <div class="form-control gap-3">
+    <label class="label">
+      <span class="label-text">Phone Number</span>
+    </label>
+    <input type="tel" name="phone" placeholder="+886912345678"
+           class="input input-bordered w-full" required
+           pattern="\+[0-9]{7,15}" title="Include country code, e.g. +886912345678" />
+
+    {% if error %}
+    <div class="alert alert-error text-sm py-2">
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary btn-sm">
+      <span id="spinner-{{ account }}" class="loading loading-spinner loading-xs htmx-indicator"></span>
+      Send Code
+    </button>
+  </div>
+</form>

@@ -1,0 +1,34 @@
+name: Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Claude Code Review
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-20250514
+          direct_prompt: |
+            Review this PR for:
+            1. Bugs and logic errors
+            2. Security vulnerabilities (OWASP Top 10)
+            3. Error handling (no silent failures, no except Exception pass)
+            4. Code quality (DRY, proper abstractions)
+            5. Test coverage for new/changed code
+            6. Adherence to CLAUDE.md conventions
+
+            Focus on HIGH confidence issues only. Be concise.

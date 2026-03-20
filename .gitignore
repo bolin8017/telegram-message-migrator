@@ -4,8 +4,14 @@
 .env.*.local
 
 # Telethon session files
+sessions/
 *.session
 *.session-journal
+
+# SQLite database
+data.db
+data.db-wal
+data.db-shm
 
 # Python
 __pycache__/
@@ -17,11 +23,11 @@ build/
 .venv/
 venv/
 env/
+.pytest_cache/
+.ruff_cache/
 
-# Node.js
-node_modules/
-.next/
-out/
+# Temp files (media download)
+tmp/
 
 # IDE
 .vscode/
@@ -32,3 +38,16 @@ out/
 # OS
 .DS_Store
 Thumbs.db
+
+# Frontend
+node_modules/
+app/static/dist/
+
+# Claude Code local settings (user-specific permissions, not shared)
+.claude/settings.local.json
+
+# Superpowers brainstorm artifacts
+.superpowers/
+
+# Architecture specs and implementation plans (local only)
+docs/superpowers/

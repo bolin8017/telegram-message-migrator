@@ -1,0 +1,158 @@
+<form id="transfer-form"
+      hx-post="/api/transfer/jobs"
+      hx-target="#step-3-content"
+      hx-swap="innerHTML"
+      hx-indicator="#transfer-spinner">
+
+  <input type="hidden" name="source_chat_id" value="{{ source_chat_id }}" />
+
+  <div class="space-y-4">
+    <!-- Source info -->
+    <div class="flex items-center gap-2 text-sm">
+      <span class="opacity-60">Source:</span>
+      <span class="font-medium">{{ source_chat_title or 'Chat #' ~ source_chat_id }}</span>
+    </div>
+
+    <!-- Transfer mode -->
+    <div class="form-control">
+      <label class="label"><span class="label-text">Transfer Mode</span></label>
+      <select name="mode" class="select select-bordered select-sm w-full">
+        <option value="forward" selected>Forward (keeps "Forwarded from" label)</option>
+        <option value="copy">Copy (sends as new message, no label)</option>
+      </select>
+    </div>
+
+    <!-- Target type -->
+    <div class="form-control">
+      <label class="label"><span class="label-text">Destination</span></label>
+      <select name="target_type" id="target-type-select" class="select select-bordered select-sm w-full"
+              onchange="
+                var mt = document.getElementById('manual-target');
+                mt.classList.toggle('hidden', this.value !== 'manual');
+                if (this.value === 'manual') {
+                  htmx.ajax('GET', '/api/transfer/target-chats', {target: '#target-chat-select', swap: 'innerHTML'});
+                }
+              ">
+        <option value="saved_messages" selected>Saved Messages (Account B)</option>
+        <option value="manual">Select a chat on Account B</option>
+      </select>
+    </div>
+
+    <!-- Manual target (hidden by default) -->
+    <div id="manual-target" class="hidden form-control">
+      <label class="label"><span class="label-text">Target Chat</span></label>
+      <select name="target_chat_id" id="target-chat-select" class="select select-bordered select-sm w-full">
+        <option disabled selected>Select destination type first...</option>
+      </select>
+    </div>
+
+    <!-- Date range -->
+    <div class="grid grid-cols-2 gap-3">
+      <div class="form-control">
+        <label class="label"><span class="label-text">From Date (optional)</span></label>
+        <input type="date" name="date_from" id="cfg-date-from"
+               class="input input-bordered input-sm w-full" />
+      </div>
+      <div class="form-control">
+        <label class="label"><span class="label-text">To Date (optional)</span></label>
+        <input type="date" name="date_to" id="cfg-date-to"
+               class="input input-bordered input-sm w-full" />
+      </div>
+    </div>
+
+    <!-- Message filters -->
+    <details class="collapse collapse-arrow bg-base-200 rounded-lg">
+      <summary class="collapse-title text-sm font-medium py-2 min-h-0">
+        Message Filters
+      </summary>
+      <div class="collapse-content space-y-2 pb-3">
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="include_text" class="checkbox checkbox-sm" checked />
+          <span class="label-text">Include text messages</span>
+        </label>
+        <label class="flex items-center gap-2 cursor-pointer">
+          <input type="checkbox" name="include_media" class="checkbox checkbox-sm" checked />
+          <span class="label-text">Include media (photos, videos, files)</span>
+        </label>
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-xs">Max file size (MB, optional)</span></label>
+          <input type="number" name="max_file_size_mb" min="1" placeholder="No limit"
+                 class="input input-bordered input-xs w-32" />
+        </div>
+        <div class="divider my-1 text-xs">Keyword Filters</div>
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-xs">Whitelist (only transfer if text contains, comma-separated)</span></label>
+          <input type="text" name="keyword_whitelist" placeholder="e.g. important, urgent"
+                 class="input input-bordered input-xs w-full" />
+        </div>
+        <div class="form-control">
+          <label class="label py-1"><span class="label-text text-xs">Blacklist (skip if text contains, comma-separated)</span></label>
+          <input type="text" name="keyword_blacklist" placeholder="e.g. spam, ad"
+                 class="input input-bordered input-xs w-full" />
+        </div>
+      </div>
+    </details>
+
+    <!-- Confirmation preview (appears after clicking "Preview") -->
+    <div id="confirm-preview" class="hidden alert alert-info text-sm">
+      <div>
+        <span id="confirm-text">Estimating...</span>
+      </div>
+    </div>
+
+    <!-- Two-step: Preview then Start -->
+    <div class="flex gap-2">
+      <button type="button" class="btn btn-outline btn-sm flex-1"
+              id="btn-preview" onclick="previewTransfer()">
+        Preview
+      </button>
+      <button type="submit" class="btn btn-primary flex-1"
+              id="btn-start" disabled
+              onclick="showStep(3)">
+        <span id="transfer-spinner" class="loading loading-spinner loading-xs htmx-indicator"></span>
+        Start Transfer
+      </button>
+    </div>
+  </div>
+</form>
+
+<script>
+function previewTransfer() {
+  var chatId = document.querySelector('input[name="source_chat_id"]').value;
+  var dateFrom = document.getElementById('cfg-date-from').value;
+  var dateTo = document.getElementById('cfg-date-to').value;
+  var preview = document.getElementById('confirm-preview');
+  var confirmText = document.getElementById('confirm-text');
+  var btnStart = document.getElementById('btn-start');
+
+  preview.classList.remove('hidden');
+  confirmText.textContent = 'Estimating message count...';
+  btnStart.disabled = true;
+
+  var url = '/api/transfer/estimate-count?source_chat_id=' + chatId;
+  if (dateFrom) url += '&date_from=' + dateFrom;
+  if (dateTo) url += '&date_to=' + dateTo;
+
+  fetch(url)
+    .then(function(r) { return r.json(); })
+    .then(function(d) {
+      var mode = document.querySelector('select[name="mode"]').value;
+      var target = document.getElementById('target-type-select').value;
+      var targetLabel = target === 'saved_messages' ? 'Saved Messages' : 'selected chat';
+      var countLabel = d.capped ? d.count + '+' : String(d.count);
+      confirmText.textContent =
+        countLabel + ' messages will be ' +
+        (mode === 'forward' ? 'forwarded' : 'copied') +
+        ' to ' + targetLabel + '.';
+      if (d.count > 0) {
+        btnStart.disabled = false;
+      } else {
+        confirmText.textContent = 'No messages found in the selected range.';
+      }
+    })
+    .catch(function() {
+      confirmText.textContent = 'Could not estimate. You can still start the transfer.';
+      btnStart.disabled = false;
+    });
+}
+</script>

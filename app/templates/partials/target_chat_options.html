@@ -1,0 +1,6 @@
+<option value="" disabled selected>Select a chat...</option>
+{% for chat in chats %}
+<option value="{{ chat.id }}">
+  [{{ chat.type[0]|upper }}] {{ chat.title }}
+</option>
+{% endfor %}

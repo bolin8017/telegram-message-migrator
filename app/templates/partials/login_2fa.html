@@ -1,0 +1,29 @@
+<form hx-post="/api/auth/submit-2fa/{{ account }}"
+      hx-target="#login-form-{{ account[-1] }}"
+      hx-swap="innerHTML"
+      hx-indicator="#spinner-2fa-{{ account }}">
+  <input type="hidden" name="phone" value="{{ phone }}" />
+
+  <div class="form-control gap-3">
+    <div class="alert alert-info text-sm py-2">
+      <span>Two-factor authentication is enabled on this account.</span>
+    </div>
+
+    <label class="label">
+      <span class="label-text">2FA Password</span>
+    </label>
+    <input type="password" name="password" placeholder="Enter your 2FA password"
+           class="input input-bordered w-full" required autofocus />
+
+    {% if error %}
+    <div class="alert alert-error text-sm py-2">
+      <span>{{ error }}</span>
+    </div>
+    {% endif %}
+
+    <button type="submit" class="btn btn-primary btn-sm">
+      <span id="spinner-2fa-{{ account }}" class="loading loading-spinner loading-xs htmx-indicator"></span>
+      Submit
+    </button>
+  </div>
+</form>

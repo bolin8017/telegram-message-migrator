@@ -1,0 +1,65 @@
+{% if jobs %}
+<div class="overflow-x-auto">
+  <table class="table table-xs">
+    <thead>
+      <tr>
+        <th>ID</th>
+        <th>Source</th>
+        <th>Mode</th>
+        <th>Status</th>
+        <th>Transferred</th>
+        <th>Failed</th>
+        <th>Skipped</th>
+        <th>Date</th>
+        <th>Export</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for job in jobs %}
+      <tr>
+        <td class="font-mono text-xs">{{ job.id }}</td>
+        <td>{{ job.source_chat_id }}</td>
+        <td>
+          <span class="badge badge-xs {% if job.mode == 'forward' %}badge-primary{% else %}badge-secondary{% endif %}">
+            {{ job.mode }}
+          </span>
+        </td>
+        <td>
+          <span class="badge badge-xs
+            {% if job.status == 'completed' %}badge-success
+            {% elif job.status == 'failed' %}badge-error
+            {% elif job.status == 'cancelled' %}badge-warning
+            {% elif job.status == 'running' %}badge-info
+            {% else %}badge-ghost{% endif %}">
+            {{ job.status }}
+          </span>
+        </td>
+        <td>{{ job.transferred_count }}</td>
+        <td>{% if job.failed_count > 0 %}<span class="text-error">{{ job.failed_count }}</span>{% else %}0{% endif %}</td>
+        <td>{{ job.skipped_count }}</td>
+        <td class="text-xs opacity-70">{{ job.created_at[:16] }}</td>
+        <td>
+          <div class="flex gap-1">
+            <a href="/api/transfer/history/{{ job.id }}/export?fmt=csv" class="link link-primary text-xs">CSV</a>
+            <a href="/api/transfer/history/{{ job.id }}/export?fmt=json" class="link link-primary text-xs">JSON</a>
+          </div>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% if has_more %}
+<div class="flex justify-center mt-3">
+  <button class="btn btn-ghost btn-xs"
+          hx-get="/api/transfer/history?page={{ page + 1 }}"
+          hx-target="#history-container"
+          hx-swap="innerHTML">
+    Load More
+  </button>
+</div>
+{% endif %}
+<p class="text-xs opacity-50 mt-2">{{ total }} total transfers</p>
+{% else %}
+<p class="text-sm opacity-50 text-center py-4">No transfer history yet.</p>
+{% endif %}

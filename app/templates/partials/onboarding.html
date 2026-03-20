@@ -1,0 +1,121 @@
+<div class="alert shadow-lg mb-6" id="onboarding-banner">
+  <div>
+    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" class="stroke-info shrink-0 w-6 h-6">
+      <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+    <div>
+      <h3 class="font-bold text-sm">First time?</h3>
+      <p class="text-xs">You need Telegram API credentials to use this tool.</p>
+    </div>
+  </div>
+  <div class="flex gap-2">
+    <button class="btn btn-sm btn-ghost"
+            onclick="document.getElementById('onboarding-banner').classList.add('hidden'); localStorage.setItem('onboarded','1')">
+      Dismiss
+    </button>
+    <button class="btn btn-sm btn-primary" onclick="document.getElementById('onboarding-modal').showModal()">
+      Setup Guide
+    </button>
+  </div>
+</div>
+
+<dialog id="onboarding-modal" class="modal">
+  <div class="modal-box max-w-lg">
+    <h3 class="font-bold text-lg mb-4">Getting Started</h3>
+
+    <div class="space-y-4 text-sm">
+      <div class="collapse collapse-arrow bg-base-200">
+        <input type="radio" name="onboard-accordion" checked />
+        <div class="collapse-title font-medium">Step 1: Get API Credentials</div>
+        <div class="collapse-content">
+          <ol class="list-decimal list-inside space-y-2">
+            <li>Go to <a href="https://my.telegram.org/apps" target="_blank" rel="noopener" class="link link-primary">my.telegram.org/apps</a></li>
+            <li>Log in with your phone number</li>
+            <li>Create a new application (any name/platform)</li>
+            <li>Copy <strong>api_id</strong> and <strong>api_hash</strong></li>
+          </ol>
+        </div>
+      </div>
+
+      <div class="collapse collapse-arrow bg-base-200">
+        <input type="radio" name="onboard-accordion" />
+        <div class="collapse-title font-medium">Step 2: Configure</div>
+        <div class="collapse-content">
+          <p>Create a <code>.env</code> file in the project root:</p>
+          <pre class="bg-base-300 p-2 rounded mt-2 text-xs"><code>TELEGRAM_API_ID=your_api_id
+TELEGRAM_API_HASH=your_api_hash</code></pre>
+          <p class="mt-2">Then restart the application.</p>
+        </div>
+      </div>
+
+      <div class="collapse collapse-arrow bg-base-200">
+        <input type="radio" name="onboard-accordion" />
+        <div class="collapse-title font-medium">Step 3: Log In</div>
+        <div class="collapse-content">
+          <p>Log in with <strong>two</strong> Telegram accounts:</p>
+          <ul class="list-disc list-inside mt-1">
+            <li><strong>Account A</strong> — the source (where messages are)</li>
+            <li><strong>Account B</strong> — the destination (where messages go)</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="collapse collapse-arrow bg-base-200">
+        <input type="radio" name="onboard-accordion" />
+        <div class="collapse-title font-medium">Understanding Transfer Modes</div>
+        <div class="collapse-content">
+          <table class="table table-xs mt-2">
+            <thead><tr><th>Mode</th><th>Pros</th><th>Cons</th></tr></thead>
+            <tbody>
+              <tr>
+                <td><strong>Forward</strong></td>
+                <td>Fast, preserves metadata</td>
+                <td>Shows "Forwarded from" label</td>
+              </tr>
+              <tr>
+                <td><strong>Copy</strong></td>
+                <td>No forwarding label</td>
+                <td>Slower, re-uploads media</td>
+              </tr>
+              <tr>
+                <td><strong>Live</strong></td>
+                <td>Real-time monitoring</td>
+                <td>Only new messages</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+      <div class="collapse collapse-arrow bg-base-200">
+        <input type="radio" name="onboard-accordion" />
+        <div class="collapse-title font-medium">Rate Limiting & Safety</div>
+        <div class="collapse-content">
+          <p>Built-in protections to keep your account safe:</p>
+          <ul class="list-disc list-inside mt-1 space-y-1">
+            <li>Token-bucket rate limiter with jitter</li>
+            <li>Automatic FloodWait detection and backoff</li>
+            <li>Daily message cap (default: 1500/day)</li>
+            <li>Batch cooldowns every 20 messages</li>
+            <li>2x delay for accounts &lt; 30 days old</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+
+    <div class="modal-action">
+      <form method="dialog">
+        <button class="btn btn-sm">Close</button>
+      </form>
+    </div>
+  </div>
+  <form method="dialog" class="modal-backdrop"><button>close</button></form>
+</dialog>
+
+<script>
+// Hide onboarding if user already dismissed it
+if (localStorage.getItem('onboarded') === '1') {
+  var b = document.getElementById('onboarding-banner');
+  if (b) b.classList.add('hidden');
+}
+</script>

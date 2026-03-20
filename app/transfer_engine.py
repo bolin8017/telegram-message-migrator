@@ -245,11 +245,13 @@ class TransferEngine(EventBroadcaster):
             # Pre-parse keyword filters (once, not per-message)
             whitelist_kws = (
                 [k.strip().lower() for k in cfg.keyword_whitelist.split(",") if k.strip()]
-                if cfg.keyword_whitelist else []
+                if cfg.keyword_whitelist
+                else []
             )
             blacklist_kws = (
                 [k.strip().lower() for k in cfg.keyword_blacklist.split(",") if k.strip()]
-                if cfg.keyword_blacklist else []
+                if cfg.keyword_blacklist
+                else []
             )
 
             async for msg in source_client.iter_messages(cfg.source_chat_id, **iter_kwargs):
@@ -577,7 +579,9 @@ class TransferEngine(EventBroadcaster):
     async def _copy_message(self, dest_client, dest_entity, msg) -> None:
         """Download media from source, re-send via dest account."""
         await copy_message(
-            dest_client, dest_entity, msg,
+            dest_client,
+            dest_entity,
+            msg,
             progress_cb=self._make_progress_cb,
             upload_limit=self._UPLOAD_LIMIT,
         )

@@ -114,9 +114,7 @@ async def test_progress_cb_passed_through():
     progress_cb = MagicMock()
     download_progress = MagicMock()
     upload_progress = MagicMock()
-    progress_cb.side_effect = lambda msg_id, phase, total: (
-        download_progress if phase == "download" else upload_progress
-    )
+    progress_cb.side_effect = lambda msg_id, phase, total: download_progress if phase == "download" else upload_progress
 
     await copy_message(dest, entity, msg, progress_cb=progress_cb)
 

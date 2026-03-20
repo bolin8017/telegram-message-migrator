@@ -13,7 +13,7 @@ A self-hosted tool for migrating messages between two Telegram accounts. Log int
 ## Quick Start (Self-Hosted)
 
 ```bash
-git clone https://github.com/<your-username>/telegram-message-migrator.git
+git clone https://github.com/bolin8017/telegram-message-migrator.git
 cd telegram-message-migrator
 cp .env.example .env
 # Edit .env: set TELEGRAM_API_ID and TELEGRAM_API_HASH

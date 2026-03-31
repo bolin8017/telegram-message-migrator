@@ -205,7 +205,7 @@ async def get_auth_status(request: Request):
                 # Connection or auth check failed — treat as not logged in
                 logger.warning("Failed to check auth for %s", account, exc_info=True)
 
-    return AuthStatusResponse(**result)
+    return AuthStatusResponse(**result, has_credentials=sm is not None)
 
 
 @router.post("/send-code/{account}")

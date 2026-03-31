@@ -60,8 +60,9 @@ export default function OnboardingWizard() {
           else setStep(1);                  // skip Welcome, go to Login A
         } else {
           // multi-user: 0=Welcome, 1=Credentials, 2=Login A, 3=Login B, 4=Complete
-          if (aLoggedIn) setStep(3);
-          else setStep(2);
+          if (aLoggedIn) setStep(3);        // skip to Login B
+          else if (status.has_credentials) setStep(2); // credentials set, go to Login A
+          else setStep(0);                  // fresh user, start from Welcome
         }
       } catch {
         // auth/status failed — start from the beginning

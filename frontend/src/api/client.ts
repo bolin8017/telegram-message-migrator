@@ -9,6 +9,8 @@ export class ApiError extends Error {
   }
 }
 
+const UNAUTHENTICATED_ENDPOINTS = ['/api/auth/status', '/api/setup/mode'];
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
@@ -27,8 +29,7 @@ export async function apiFetch<T>(
       detail: response.statusText,
     }));
 
-    const skipRedirect = ['/api/auth/status', '/api/setup/mode'];
-    if (response.status === 401 && !skipRedirect.includes(path)) {
+    if (response.status === 401 && !UNAUTHENTICATED_ENDPOINTS.includes(path)) {
       window.location.href = '/onboarding';
     }
 

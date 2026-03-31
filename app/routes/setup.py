@@ -5,8 +5,6 @@ import json
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import JSONResponse
-from slowapi import Limiter
-from slowapi.util import get_remote_address
 
 from ..config import get_settings
 from ..crypto import derive_key, encrypt
@@ -21,10 +19,9 @@ from ..user_context import (
     UserContext,
     register_context,
 )
+from .auth import limiter
 
 router = APIRouter(prefix="/api/setup", tags=["setup"])
-
-limiter = Limiter(key_func=get_remote_address)
 
 
 @router.get("/mode")

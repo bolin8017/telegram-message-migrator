@@ -67,12 +67,7 @@ def resolve_session_manager(request: Request):
         raise HTTPException(401, "Not authenticated")
     if ctx.session_manager is None:
         raise HTTPException(400, "Session incomplete. Please complete login.")
-    if ctx.user_agent_hash and ctx.ip_prefix:
-        current_ua = hash_user_agent(request.headers.get("user-agent", ""))
-        current_ip = extract_ip_prefix(request.client.host if request.client else "")
-        if not validate_session_binding(ctx.user_agent_hash, ctx.ip_prefix, current_ua, current_ip):
-            logger.warning("Session binding mismatch in resolve_session_manager for user %d", ctx.user_id)
-            raise HTTPException(status_code=401, detail="Session binding changed. Please re-login.")
+    check_session_binding(ctx, request)
     return ctx.session_manager
 
 
@@ -114,13 +109,7 @@ async def require_user(request: Request) -> UserContext:
     # Fast path: context is already in the in-memory registry
     ctx = get_context(token)
     if ctx is not None:
-        # Validate session binding (UA + IP) if stored
-        if ctx.user_agent_hash and ctx.ip_prefix:
-            current_ua = hash_user_agent(request.headers.get("user-agent", ""))
-            current_ip = extract_ip_prefix(request.client.host if request.client else "")
-            if not validate_session_binding(ctx.user_agent_hash, ctx.ip_prefix, current_ua, current_ip):
-                logger.warning("Session binding mismatch for user %d — both UA and IP changed", ctx.user_id)
-                raise HTTPException(status_code=401, detail="Session binding changed. Please re-login.")
+        check_session_binding(ctx, request)
         ctx.last_active = datetime.now(UTC)
         return ctx
 
@@ -137,23 +126,23 @@ async def require_user(request: Request) -> UserContext:
 # ---------------------------------------------------------------------------
 
 
-def validate_session_binding(
-    stored_ua: str,
-    stored_ip: str,
-    current_ua: str,
-    current_ip: str,
-) -> bool:
-    """Check whether a session's binding (UA + IP) is still acceptable.
+def validate_session_binding(stored_ua: str, current_ua: str) -> bool:
+    """Check whether a session's UA binding is still acceptable.
 
-    Policy (industry standard — OWASP Session Management):
-    - UA changed   ->  False  (UA should never change within a session)
-    - IP changed   ->  True   (common on mobile networks, NAT changes)
-    - Neither      ->  True
+    Policy (OWASP Session Management):
+    - UA changed -> False (UA should never change within a session)
+    - UA same    -> True
     """
-    ua_changed = stored_ua != current_ua
-    if ua_changed:
-        return False
-    return True
+    return stored_ua == current_ua
+
+
+def check_session_binding(ctx, request: Request) -> None:
+    """Validate session binding for a UserContext; raise 401 on mismatch."""
+    if ctx.user_agent_hash:
+        current_ua = hash_user_agent(request.headers.get("user-agent", ""))
+        if not validate_session_binding(ctx.user_agent_hash, current_ua):
+            logger.warning("Session binding mismatch for user %d", ctx.user_id)
+            raise HTTPException(status_code=401, detail="Session binding changed. Please re-login.")
 
 
 # ---------------------------------------------------------------------------

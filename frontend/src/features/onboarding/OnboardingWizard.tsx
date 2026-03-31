@@ -12,15 +12,12 @@ import CompleteStep from './CompleteStep';
 const multiUserSteps = ['Welcome', 'API Credentials', 'Login A', 'Login B', 'Complete'];
 const singleUserSteps = ['Welcome', 'Login A', 'Login B', 'Complete'];
 
-/** Detect single-user mode by probing the setup endpoint. */
+/** Detect single-user mode via the setup mode endpoint. */
 async function detectSingleUserMode(): Promise<boolean> {
   try {
-    const resp = await fetch('/api/setup/credentials', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ api_id: 0, api_hash: '' }),
-    });
-    return resp.status === 404;
+    const resp = await fetch('/api/setup/mode');
+    const data = await resp.json();
+    return data.single_user_mode === true;
   } catch {
     return false;
   }

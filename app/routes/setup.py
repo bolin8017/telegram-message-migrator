@@ -23,6 +23,13 @@ from ..user_context import (
 router = APIRouter(prefix="/api/setup", tags=["setup"])
 
 
+@router.get("/mode")
+async def get_setup_mode():
+    """Return whether the server is in single-user or multi-user mode."""
+    s = get_settings()
+    return {"single_user_mode": s.single_user_mode}
+
+
 @router.post("/credentials")
 async def setup_credentials(request: Request, body: SetupCredentialsRequest):
     """Accept user-provided Telegram API credentials (multi-user only).

@@ -12,16 +12,18 @@ import CompleteStep from './CompleteStep';
 const multiUserSteps = ['Welcome', 'API Credentials', 'Login A', 'Login B', 'Complete'];
 const singleUserSteps = ['Welcome', 'Login A', 'Login B', 'Complete'];
 
-/** Detect single-user mode by probing the setup endpoint. */
+/** Detect single-user mode via GET /api/setup/mode. Falls back to multi-user (false) on error. */
 async function detectSingleUserMode(): Promise<boolean> {
   try {
-    const resp = await fetch('/api/setup/credentials', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ api_id: 0, api_hash: '' }),
-    });
-    return resp.status === 404;
-  } catch {
+    const resp = await fetch('/api/setup/mode');
+    if (!resp.ok) {
+      console.error(`/api/setup/mode returned HTTP ${resp.status}`);
+      return false;
+    }
+    const data = await resp.json();
+    return data.single_user_mode === true;
+  } catch (err) {
+    console.error('Failed to detect setup mode:', err);
     return false;
   }
 }
@@ -60,11 +62,12 @@ export default function OnboardingWizard() {
           else setStep(1);                  // skip Welcome, go to Login A
         } else {
           // multi-user: 0=Welcome, 1=Credentials, 2=Login A, 3=Login B, 4=Complete
-          if (aLoggedIn) setStep(3);
-          else setStep(2);
+          if (aLoggedIn) setStep(3);        // skip to Login B
+          else if (status.has_credentials) setStep(2); // credentials set, go to Login A
+          else setStep(0);                  // fresh user, start from Welcome
         }
-      } catch {
-        // auth/status failed — start from the beginning
+      } catch (err) {
+        console.error('Failed to check auth status during onboarding:', err);
         setStep(0);
       }
 

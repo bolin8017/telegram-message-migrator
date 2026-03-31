@@ -9,6 +9,8 @@ export class ApiError extends Error {
   }
 }
 
+const UNAUTHENTICATED_ENDPOINTS = ['/api/auth/status', '/api/setup/mode'] as const;
+
 export async function apiFetch<T>(
   path: string,
   options: RequestInit = {},
@@ -26,6 +28,13 @@ export async function apiFetch<T>(
     const body = await response.json().catch(() => ({
       detail: response.statusText,
     }));
+
+    const basePath = path.split('?')[0];
+    if (response.status === 401 && !UNAUTHENTICATED_ENDPOINTS.includes(basePath as typeof UNAUTHENTICATED_ENDPOINTS[number])) {
+      window.location.href = '/onboarding';
+      return new Promise<T>(() => {}); // never resolves; page is navigating away
+    }
+
     throw new ApiError(
       response.status,
       body.detail ?? 'Unknown error',

@@ -16,6 +16,7 @@ export interface AccountInfo {
 export interface AuthStatusResponse {
   account_a: AccountInfo | null;
   account_b: AccountInfo | null;
+  has_credentials: boolean;
 }
 
 // ── Chats ─────────────────────────────────────────────

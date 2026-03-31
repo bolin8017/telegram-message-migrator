@@ -360,6 +360,9 @@ class TransferEngine(EventBroadcaster):
                 logger.debug("Acquiring rate limit for msg #%d (op=%s)", msg.id, op)
                 await asyncio.wait_for(self.rate_limiter.acquire(op), timeout=30.0)
 
+                if self._cancelled:
+                    break
+
                 # Transfer the message
                 logger.debug("Transferring msg #%d (mode=%s)", msg.id, self._effective_mode)
                 result = await self._transfer_message(

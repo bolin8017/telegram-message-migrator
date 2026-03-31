@@ -40,6 +40,16 @@ export default function EventFeed() {
         }),
       live_stopped: () => setActive(false),
     },
+    onError: (retriesExhausted) =>
+      addEvent({
+        type: 'error',
+        data: {
+          detail: retriesExhausted
+            ? 'Connection lost — please refresh the page'
+            : 'Connection lost — retrying…',
+        },
+        timestamp: Date.now(),
+      }),
   });
 
   // ── Empty state ───────────────────────────────────────

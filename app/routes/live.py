@@ -6,6 +6,7 @@ multi-user mode (per-user contexts via session_id cookie).
 
 import asyncio
 import json
+import logging
 
 from fastapi import APIRouter, HTTPException, Request
 from fastapi.responses import StreamingResponse
@@ -14,7 +15,19 @@ from ..config import get_settings
 from ..middleware import resolve_session_manager
 from ..models import LiveForwardStart
 
+logger = logging.getLogger(__name__)
+
 router = APIRouter(prefix="/api/live", tags=["live"])
+
+_LIVE_EVENTS = frozenset(
+    {
+        "live_started",
+        "live_stopped",
+        "live_message",
+        "live_error",
+        "live_rate_limited",
+    }
+)
 
 
 # ── Mode-aware helpers ────────────────────────────────────────────────
@@ -104,8 +117,12 @@ async def live_events(request: Request):
             while True:
                 try:
                     msg = await asyncio.wait_for(queue.get(), timeout=30.0)
-                    yield f"event: {msg['type']}\ndata: {json.dumps(msg['data'])}\n\n"
-                    if msg["type"] == "live_stopped":
+                    event_type = msg["type"]
+                    if event_type not in _LIVE_EVENTS:
+                        logger.debug("Dropping unknown SSE event type: %s", event_type)
+                        continue
+                    yield f"event: {event_type}\ndata: {json.dumps(msg['data'])}\n\n"
+                    if event_type == "live_stopped":
                         break
                 except TimeoutError:
                     yield ": keepalive\n\n"

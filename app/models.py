@@ -18,6 +18,7 @@ class AccountInfo(BaseModel):
 class AuthStatusResponse(BaseModel):
     account_a: AccountInfo | None = None
     account_b: AccountInfo | None = None
+    has_credentials: bool = False
 
 
 class SendCodeRequest(BaseModel):

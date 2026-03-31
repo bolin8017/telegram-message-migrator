@@ -7,6 +7,7 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from fastapi import FastAPI, HTTPException, Request
+from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse, HTMLResponse
 from fastapi.staticfiles import StaticFiles
 from slowapi import _rate_limit_exceeded_handler
@@ -126,6 +127,19 @@ async def lifespan(app: FastAPI):
 
 
 app = FastAPI(title="Telegram Message Migrator", lifespan=lifespan)
+
+# CORS — only allow requests from our own domain and local dev
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "https://tgmigrate.com",
+        "http://localhost:5173",  # Vite dev server
+        "http://localhost:8000",
+    ],
+    allow_credentials=True,
+    allow_methods=["GET", "POST", "DELETE"],
+    allow_headers=["Content-Type"],
+)
 
 # Rate limiting
 app.state.limiter = auth.limiter

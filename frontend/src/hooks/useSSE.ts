@@ -3,7 +3,7 @@ import { useEffect, useRef } from 'react';
 interface UseSSEOptions {
   url: string | null;
   events: Record<string, (data: unknown) => void>;
-  onError?: () => void;
+  onError?: (retriesExhausted: boolean) => void;
   onOpen?: () => void;
 }
 
@@ -39,13 +39,16 @@ export function useSSE({ url, events, onError, onOpen }: UseSSEOptions) {
       };
 
       es.onerror = () => {
-        onErrorRef.current?.();
         es?.close();
         es = null;
         if (!disposed && retries < MAX_RETRIES) {
           retries++;
+          onErrorRef.current?.(false);
           retryTimer = setTimeout(connect, backoff);
           backoff = Math.min(backoff * 2, MAX_BACKOFF);
+        } else if (!disposed) {
+          console.error(`[useSSE] Retries exhausted (${MAX_RETRIES}) for ${url}`);
+          onErrorRef.current?.(true);
         }
       };
 

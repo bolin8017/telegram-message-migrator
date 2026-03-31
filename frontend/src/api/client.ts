@@ -9,7 +9,7 @@ export class ApiError extends Error {
   }
 }
 
-const UNAUTHENTICATED_ENDPOINTS = ['/api/auth/status', '/api/setup/mode'];
+const UNAUTHENTICATED_ENDPOINTS = ['/api/auth/status', '/api/setup/mode'] as const;
 
 export async function apiFetch<T>(
   path: string,
@@ -29,7 +29,8 @@ export async function apiFetch<T>(
       detail: response.statusText,
     }));
 
-    if (response.status === 401 && !UNAUTHENTICATED_ENDPOINTS.includes(path)) {
+    const basePath = path.split('?')[0];
+    if (response.status === 401 && !UNAUTHENTICATED_ENDPOINTS.includes(basePath as typeof UNAUTHENTICATED_ENDPOINTS[number])) {
       window.location.href = '/onboarding';
       return new Promise<T>(() => {}); // never resolves; page is navigating away
     }

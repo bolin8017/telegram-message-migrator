@@ -40,10 +40,14 @@ export default function EventFeed() {
         }),
       live_stopped: () => setActive(false),
     },
-    onError: () =>
+    onError: (retriesExhausted) =>
       addEvent({
         type: 'error',
-        data: { detail: 'Connection lost — retrying…' },
+        data: {
+          detail: retriesExhausted
+            ? 'Connection lost — please refresh the page'
+            : 'Connection lost — retrying…',
+        },
         timestamp: Date.now(),
       }),
   });

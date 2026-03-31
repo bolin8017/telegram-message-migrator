@@ -111,6 +111,7 @@ async def progress_sse(request: Request, job_id: str):
                     msg = await asyncio.wait_for(queue.get(), timeout=30.0)
                     event_type = msg["type"]
                     if event_type not in _TRANSFER_EVENTS:
+                        logger.debug("Dropping unknown SSE event type: %s", event_type)
                         continue
                     yield f"event: {event_type}\ndata: {json.dumps(msg['data'])}\n\n"
                     if event_type in ("job_completed", "job_failed", "job_cancelled"):

@@ -40,6 +40,12 @@ export default function EventFeed() {
         }),
       live_stopped: () => setActive(false),
     },
+    onError: () =>
+      addEvent({
+        type: 'error',
+        data: { detail: 'Connection lost — retrying…' },
+        timestamp: Date.now(),
+      }),
   });
 
   // ── Empty state ───────────────────────────────────────

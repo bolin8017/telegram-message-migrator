@@ -372,7 +372,7 @@ async def submit_code(request: Request, account: AccountKey, body: SubmitCodeReq
     if pa.account != account:
         raise HTTPException(
             status_code=400,
-            detail=f"Pending auth is for {pa.account}, not {account}",
+            detail="Invalid request for current authentication flow",
         )
 
     try:
@@ -410,7 +410,7 @@ async def submit_2fa(request: Request, account: AccountKey, body: Submit2FAReque
     if pa.account != account:
         raise HTTPException(
             status_code=400,
-            detail=f"Pending auth is for {pa.account}, not {account}",
+            detail="Invalid request for current authentication flow",
         )
 
     try:

@@ -67,6 +67,12 @@ def resolve_session_manager(request: Request):
         raise HTTPException(401, "Not authenticated")
     if ctx.session_manager is None:
         raise HTTPException(400, "Session incomplete. Please complete login.")
+    if ctx.user_agent_hash and ctx.ip_prefix:
+        current_ua = hash_user_agent(request.headers.get("user-agent", ""))
+        current_ip = extract_ip_prefix(request.client.host if request.client else "")
+        if not validate_session_binding(ctx.user_agent_hash, ctx.ip_prefix, current_ua, current_ip):
+            logger.warning("Session binding mismatch in resolve_session_manager for user %d", ctx.user_id)
+            raise HTTPException(status_code=401, detail="Session binding changed. Please re-login.")
     return ctx.session_manager
 
 

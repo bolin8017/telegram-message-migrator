@@ -26,6 +26,12 @@ export async function apiFetch<T>(
     const body = await response.json().catch(() => ({
       detail: response.statusText,
     }));
+
+    const skipRedirect = ['/api/auth/status', '/api/setup/mode'];
+    if (response.status === 401 && !skipRedirect.includes(path)) {
+      window.location.href = '/onboarding';
+    }
+
     throw new ApiError(
       response.status,
       body.detail ?? 'Unknown error',

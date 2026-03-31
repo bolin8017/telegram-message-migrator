@@ -23,10 +23,18 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/transfer", tags=["transfer"])
 
-_TRANSFER_EVENTS = frozenset({
-    "progress", "job_completed", "job_failed", "job_cancelled",
-    "mode_changed", "rate_limited", "paused", "resumed",
-})
+_TRANSFER_EVENTS = frozenset(
+    {
+        "progress",
+        "job_completed",
+        "job_failed",
+        "job_cancelled",
+        "mode_changed",
+        "rate_limited",
+        "paused",
+        "resumed",
+    }
+)
 
 
 # ── Mode-aware helpers ────────────────────────────────────────────────

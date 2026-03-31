@@ -16,9 +16,15 @@ from ..models import LiveForwardStart
 
 router = APIRouter(prefix="/api/live", tags=["live"])
 
-_LIVE_EVENTS = frozenset({
-    "forwarded", "skipped", "failed", "live_stopped", "stats",
-})
+_LIVE_EVENTS = frozenset(
+    {
+        "forwarded",
+        "skipped",
+        "failed",
+        "live_stopped",
+        "stats",
+    }
+)
 
 
 # ── Mode-aware helpers ────────────────────────────────────────────────

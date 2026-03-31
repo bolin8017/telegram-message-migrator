@@ -7,6 +7,8 @@ interface UseSSEOptions {
   onOpen?: () => void;
 }
 
+const MAX_BACKOFF = 30_000;
+
 export function useSSE({ url, events, onError, onOpen }: UseSSEOptions) {
   const eventsRef = useRef(events);
   eventsRef.current = events;
@@ -17,24 +19,53 @@ export function useSSE({ url, events, onError, onOpen }: UseSSEOptions) {
 
   useEffect(() => {
     if (!url) return;
-    const es = new EventSource(url, { withCredentials: true });
-    es.onopen = () => onOpenRef.current?.();
-    es.onerror = () => onErrorRef.current?.();
 
-    // Read from ref at dispatch time so callers always get the latest handler
-    for (const eventName of Object.keys(eventsRef.current)) {
-      es.addEventListener(eventName, (e) => {
-        const handler = eventsRef.current[eventName];
-        if (!handler) return;
-        try {
-          const data: unknown = JSON.parse((e as MessageEvent).data);
-          handler(data);
-        } catch {
-          handler((e as MessageEvent).data);
+    let backoff = 1000;
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    let es: EventSource | null = null;
+    let disposed = false;
+
+    function connect() {
+      if (disposed) return;
+
+      es = new EventSource(url!, { withCredentials: true });
+
+      es.onopen = () => {
+        backoff = 1000;
+        onOpenRef.current?.();
+      };
+
+      es.onerror = () => {
+        onErrorRef.current?.();
+        es?.close();
+        es = null;
+        if (!disposed) {
+          retryTimer = setTimeout(connect, backoff);
+          backoff = Math.min(backoff * 2, MAX_BACKOFF);
         }
-      });
+      };
+
+      // Read from ref at dispatch time so callers always get the latest handler
+      for (const eventName of Object.keys(eventsRef.current)) {
+        es.addEventListener(eventName, (e) => {
+          const handler = eventsRef.current[eventName];
+          if (!handler) return;
+          try {
+            const data: unknown = JSON.parse((e as MessageEvent).data);
+            handler(data);
+          } catch {
+            handler((e as MessageEvent).data);
+          }
+        });
+      }
     }
 
-    return () => es.close();
+    connect();
+
+    return () => {
+      disposed = true;
+      if (retryTimer !== null) clearTimeout(retryTimer);
+      es?.close();
+    };
   }, [url]);
 }

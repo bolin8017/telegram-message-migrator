@@ -64,24 +64,16 @@ async def test_require_user_unknown_cookie_raises_401():
         assert exc_info.value.status_code == 401
 
 
-def test_session_binding_both_changed_fails():
-    assert validate_session_binding("old_ua", "192.168", "new_ua", "10.0") is False
+def test_session_binding_ua_changed_fails():
+    assert validate_session_binding("old_ua", "new_ua") is False
 
 
-def test_session_binding_ip_only_changed_passes():
-    assert validate_session_binding("same", "192.168", "same", "10.0") is True
+def test_session_binding_ua_same_passes():
+    assert validate_session_binding("same", "same") is True
 
 
-def test_session_binding_ua_only_changed_passes():
-    assert validate_session_binding("old", "192.168", "new", "192.168") is True
-
-
-def test_session_binding_nothing_changed_passes():
-    assert validate_session_binding("same", "same_ip", "same", "same_ip") is True
-
-
-async def test_require_user_session_binding_changed_raises_401():
-    """When both UA and IP differ from stored values, require_user should raise 401."""
+async def test_require_user_session_binding_ua_changed_raises_401():
+    """When UA differs from stored value, require_user should raise 401."""
     from app.middleware import hash_user_agent, require_user
     from app.user_context import UserContext, register_context
 
@@ -97,7 +89,7 @@ async def test_require_user_session_binding_changed_raises_401():
     request.cookies = {"session_id": "binding_tok"}
     request.headers = {"user-agent": "CompletelyDifferentBrowser/2.0"}
     request.client = MagicMock()
-    request.client.host = "10.0.0.55"
+    request.client.host = "192.168.1.100"  # same IP — only UA changed
 
     with pytest.raises(HTTPException) as exc_info:
         await require_user(request)

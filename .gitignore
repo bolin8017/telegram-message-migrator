@@ -51,3 +51,7 @@ app/static/dist/
 
 # Architecture specs and implementation plans (local only)
 docs/superpowers/
+
+# OCI infrastructure scripts (contain tenancy/user IDs)
+scripts/oci-*.sh
+oci-launch.log

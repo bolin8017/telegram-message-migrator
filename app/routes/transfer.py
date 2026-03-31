@@ -23,6 +23,11 @@ logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/transfer", tags=["transfer"])
 
+_TRANSFER_EVENTS = frozenset({
+    "progress", "job_completed", "job_failed", "job_cancelled",
+    "mode_changed", "rate_limited", "paused", "resumed",
+})
+
 
 # ── Mode-aware helpers ────────────────────────────────────────────────
 
@@ -91,8 +96,11 @@ async def progress_sse(request: Request, job_id: str):
             while True:
                 try:
                     msg = await asyncio.wait_for(queue.get(), timeout=30.0)
-                    yield f"event: {msg['type']}\ndata: {json.dumps(msg['data'])}\n\n"
-                    if msg["type"] in ("job_completed", "job_failed", "job_cancelled"):
+                    event_type = msg["type"]
+                    if event_type not in _TRANSFER_EVENTS:
+                        continue
+                    yield f"event: {event_type}\ndata: {json.dumps(msg['data'])}\n\n"
+                    if event_type in ("job_completed", "job_failed", "job_cancelled"):
                         break
                 except TimeoutError:
                     yield ": keepalive\n\n"

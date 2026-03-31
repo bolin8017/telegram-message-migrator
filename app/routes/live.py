@@ -16,6 +16,10 @@ from ..models import LiveForwardStart
 
 router = APIRouter(prefix="/api/live", tags=["live"])
 
+_LIVE_EVENTS = frozenset({
+    "forwarded", "skipped", "failed", "live_stopped", "stats",
+})
+
 
 # ── Mode-aware helpers ────────────────────────────────────────────────
 
@@ -104,8 +108,11 @@ async def live_events(request: Request):
             while True:
                 try:
                     msg = await asyncio.wait_for(queue.get(), timeout=30.0)
-                    yield f"event: {msg['type']}\ndata: {json.dumps(msg['data'])}\n\n"
-                    if msg["type"] == "live_stopped":
+                    event_type = msg["type"]
+                    if event_type not in _LIVE_EVENTS:
+                        continue
+                    yield f"event: {event_type}\ndata: {json.dumps(msg['data'])}\n\n"
+                    if event_type == "live_stopped":
                         break
                 except TimeoutError:
                     yield ": keepalive\n\n"

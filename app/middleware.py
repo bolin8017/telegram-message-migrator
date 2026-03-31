@@ -139,14 +139,13 @@ def validate_session_binding(
 ) -> bool:
     """Check whether a session's binding (UA + IP) is still acceptable.
 
-    Policy:
-    - Both UA **and** IP changed  ->  False  (require re-auth)
-    - Only one changed           ->  True   (common on mobile networks)
-    - Neither changed            ->  True
+    Policy (industry standard — OWASP Session Management):
+    - UA changed   ->  False  (UA should never change within a session)
+    - IP changed   ->  True   (common on mobile networks, NAT changes)
+    - Neither      ->  True
     """
     ua_changed = stored_ua != current_ua
-    ip_changed = stored_ip != current_ip
-    if ua_changed and ip_changed:
+    if ua_changed:
         return False
     return True
 

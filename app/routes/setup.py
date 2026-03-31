@@ -22,6 +22,12 @@ from ..user_context import (
 
 router = APIRouter(prefix="/api/setup", tags=["setup"])
 
+# Reuse the limiter from auth routes
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+
+limiter = Limiter(key_func=get_remote_address)
+
 
 @router.get("/mode")
 async def get_setup_mode():
@@ -31,6 +37,7 @@ async def get_setup_mode():
 
 
 @router.post("/credentials")
+@limiter.limit("5/hour")
 async def setup_credentials(request: Request, body: SetupCredentialsRequest):
     """Accept user-provided Telegram API credentials (multi-user only).
 

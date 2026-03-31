@@ -115,8 +115,9 @@ describe('useSSE', () => {
     expect(handler).toHaveBeenCalledWith({ percent: 42 });
   });
 
-  it('passes raw string when JSON parse fails', () => {
+  it('logs error and skips handler when JSON parse fails', () => {
     const handler = vi.fn();
+    const errorSpy = vi.spyOn(console, 'error').mockImplementation(() => {});
     renderHook(() =>
       useSSE({
         url: '/api/transfer/progress',
@@ -126,7 +127,9 @@ describe('useSSE', () => {
 
     const es = MockEventSource.instances[0]!;
     es._emit('progress', 'not-json');
-    expect(handler).toHaveBeenCalledWith('not-json');
+    expect(handler).not.toHaveBeenCalled();
+    expect(errorSpy).toHaveBeenCalled();
+    errorSpy.mockRestore();
   });
 
   it('calls onOpen when EventSource connects', () => {

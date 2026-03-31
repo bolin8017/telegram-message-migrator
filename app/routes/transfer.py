@@ -29,10 +29,15 @@ _TRANSFER_EVENTS = frozenset(
         "job_completed",
         "job_failed",
         "job_cancelled",
-        "mode_changed",
+        "job_paused",
+        "job_resumed",
         "rate_limited",
-        "paused",
-        "resumed",
+        "daily_cap",
+        "auto_paused",
+        "auth_expired",
+        "message_transferred",
+        "message_skipped",
+        "message_failed",
     }
 )
 

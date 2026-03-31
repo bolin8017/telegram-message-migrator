@@ -31,6 +31,7 @@ export async function apiFetch<T>(
 
     if (response.status === 401 && !UNAUTHENTICATED_ENDPOINTS.includes(path)) {
       window.location.href = '/onboarding';
+      return new Promise<T>(() => {}); // never resolves; page is navigating away
     }
 
     throw new ApiError(

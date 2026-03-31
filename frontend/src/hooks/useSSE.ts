@@ -8,6 +8,7 @@ interface UseSSEOptions {
 }
 
 const MAX_BACKOFF = 30_000;
+const MAX_RETRIES = 10;
 
 export function useSSE({ url, events, onError, onOpen }: UseSSEOptions) {
   const eventsRef = useRef(events);
@@ -21,6 +22,7 @@ export function useSSE({ url, events, onError, onOpen }: UseSSEOptions) {
     if (!url) return;
 
     let backoff = 1000;
+    let retries = 0;
     let retryTimer: ReturnType<typeof setTimeout> | null = null;
     let es: EventSource | null = null;
     let disposed = false;
@@ -32,6 +34,7 @@ export function useSSE({ url, events, onError, onOpen }: UseSSEOptions) {
 
       es.onopen = () => {
         backoff = 1000;
+        retries = 0;
         onOpenRef.current?.();
       };
 
@@ -39,7 +42,8 @@ export function useSSE({ url, events, onError, onOpen }: UseSSEOptions) {
         onErrorRef.current?.();
         es?.close();
         es = null;
-        if (!disposed) {
+        if (!disposed && retries < MAX_RETRIES) {
+          retries++;
           retryTimer = setTimeout(connect, backoff);
           backoff = Math.min(backoff * 2, MAX_BACKOFF);
         }
@@ -54,7 +58,7 @@ export function useSSE({ url, events, onError, onOpen }: UseSSEOptions) {
             const data: unknown = JSON.parse((e as MessageEvent).data);
             handler(data);
           } catch {
-            handler((e as MessageEvent).data);
+            console.error('[useSSE] Failed to parse event:', eventName, (e as MessageEvent).data);
           }
         });
       }

@@ -18,11 +18,11 @@ router = APIRouter(prefix="/api/live", tags=["live"])
 
 _LIVE_EVENTS = frozenset(
     {
-        "forwarded",
-        "skipped",
-        "failed",
+        "live_started",
         "live_stopped",
-        "stats",
+        "live_message",
+        "live_error",
+        "live_rate_limited",
     }
 )
 

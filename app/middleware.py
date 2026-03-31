@@ -136,13 +136,14 @@ def validate_session_binding(stored_ua: str, current_ua: str) -> bool:
     return stored_ua == current_ua
 
 
-def check_session_binding(ctx, request: Request) -> None:
+def check_session_binding(ctx: UserContext, request: Request) -> None:
     """Validate session binding for a UserContext; raise 401 on mismatch."""
-    if ctx.user_agent_hash:
-        current_ua = hash_user_agent(request.headers.get("user-agent", ""))
-        if not validate_session_binding(ctx.user_agent_hash, current_ua):
-            logger.warning("Session binding mismatch for user %d", ctx.user_id)
-            raise HTTPException(status_code=401, detail="Session binding changed. Please re-login.")
+    if not ctx.user_agent_hash:
+        return
+    current_ua = hash_user_agent(request.headers.get("user-agent", ""))
+    if not validate_session_binding(ctx.user_agent_hash, current_ua):
+        logger.warning("Session binding mismatch for user %d", ctx.user_id)
+        raise HTTPException(status_code=401, detail="Session binding changed. Please re-login.")
 
 
 # ---------------------------------------------------------------------------

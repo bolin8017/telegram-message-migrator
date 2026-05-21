@@ -79,7 +79,8 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
       - uses: docker/build-push-action@v6
         with:
           context: .

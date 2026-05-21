@@ -1,6 +1,6 @@
 [project]
 name = "telegram-message-migrator"
-version = "0.2.0"
+version = "0.3.0"
 description = "Migrate messages between two Telegram accounts with forward/copy modes, rate limiting, and checkpoint recovery."
 readme = "README.md"
 license = "MIT"

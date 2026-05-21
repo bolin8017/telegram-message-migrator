@@ -20,6 +20,11 @@
 }
 
 {$DOMAIN:localhost} {
+	# TLS mode: empty = automatic Let's Encrypt (self-host default).
+	# Behind Cloudflare proxy ("Full" mode), set TLS_MODE=tls internal in .env
+	# so Caddy issues a self-signed cert (CF terminates real TLS at edge).
+	{$TLS_MODE:}
+
 	reverse_proxy app:8000 {
 		flush_interval -1
 	}

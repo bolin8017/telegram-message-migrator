@@ -15,9 +15,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
-      - run: pip install ruff
+      - run: pip install ruff bandit
       - run: ruff check app/ tests/
       - run: ruff format --check app/ tests/
+      - name: Bandit (Python SAST, high severity + high confidence)
+        run: bandit -r app/ -lll -iii
 
   test-backend:
     runs-on: ubuntu-latest
@@ -28,7 +30,10 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -e ".[dev]"
+      - run: pip install -U pip
+      - run: pip install -e ".[dev]" pip-audit
+      - name: pip-audit (Python dependency CVEs)
+        run: pip-audit --skip-editable
       - run: pytest tests/ -v
         env:
           TELEGRAM_API_ID: "12345"
@@ -44,7 +49,9 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: cd frontend && npm install
+      - run: cd frontend && npm install --no-audit --no-fund
+      - name: audit-ci (npm production deps, high+ threshold)
+        run: cd frontend && npx --yes audit-ci@^7 --high --skip-dev
       - run: cd frontend && npx tsc -b
       - run: cd frontend && npm test
 
@@ -72,7 +79,8 @@ jobs:
             type=ref,event=branch
             type=semver,pattern={{version}}
             type=semver,pattern={{major}}.{{minor}}
-            type=sha
+            type=sha,prefix=sha-
+            type=raw,value=latest,enable={{is_default_branch}}
       - uses: docker/build-push-action@v6
         with:
           context: .
@@ -82,3 +90,51 @@ jobs:
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
+
+  trivy:
+    runs-on: ubuntu-latest
+    needs: docker
+    if: github.event_name == 'push'
+    permissions:
+      contents: read
+      packages: read
+      security-events: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trivy image scan (HIGH, CRITICAL, fixed only)
+        uses: aquasecurity/trivy-action@0.24.0
+        with:
+          image-ref: ghcr.io/${{ github.repository }}:sha-${{ github.sha }}
+          format: sarif
+          output: trivy-results.sarif
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          ignore-unfixed: true
+      - name: Upload SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: trivy-results.sarif
+
+  pr-title:
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            chore
+            docs
+            style
+            refactor
+            perf
+            test
+            build
+            ci
+            revert
+          requireScope: false
+          subjectPattern: ^[a-z].+[^.]$

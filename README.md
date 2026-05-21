@@ -65,6 +65,11 @@ To replicate on your own domain:
 
 Caddy auto-provisions and renews TLS certificates. The app runs behind the reverse proxy with resource limits (1 CPU, 512 MB RAM). Cloudflare's edge ranges are pre-configured in [`caddy/Caddyfile`](caddy/Caddyfile) so logs see real client IPs.
 
+**TLS modes:**
+
+- **Self-host with public DNS** (no proxy in front): leave `TLS_MODE` unset. Caddy issues a real Let's Encrypt cert via the HTTP-01 challenge.
+- **Behind Cloudflare proxy** ("Full" or "Full strict" mode): set `TLS_MODE=tls internal` in `.env` so Caddy uses a self-signed cert at the origin. Cloudflare terminates real TLS at the edge.
+
 CI/CD is available via GitHub Actions — pushes to `main` build and publish a container image to GHCR.
 
 ## Development

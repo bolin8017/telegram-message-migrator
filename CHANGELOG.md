@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `CHANGELOG.md` and `.editorconfig`.
 - `scripts/gcp-bootstrap.md` documenting first-time GCP + Cloudflare provisioning.
 - Caddy now trusts Cloudflare's published edge IP ranges and reads the real client IP from `CF-Connecting-IP`.
+- Dependabot config for pip, npm, github-actions, and docker ecosystems (weekly, with minor/patch grouped).
+- CI security scans: Bandit (Python SAST), pip-audit (Python deps), audit-ci (npm production deps), Trivy (container image). Severity gates set to high/critical block, lower tolerated.
+- CI now enforces Conventional Commits 1.0.0 for PR titles via amannn/action-semantic-pull-request.
+- `TLS_MODE` env var so the same Caddyfile supports auto Let's Encrypt (self-host) and `tls internal` (behind Cloudflare proxy).
 
 ### Changed
 
@@ -20,6 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - `scripts/deploy.sh` now runs `docker compose pull` before `up -d`.
 - `scripts/server-setup.sh` rewritten to target GCP e2-micro Ubuntu 22.04 x86_64.
 - README, CLAUDE.md, CONTRIBUTING.md, and `.env.example` updated to reference the hosted instance at <https://tgmigrate.com>.
+- CI's docker job now publishes the `:latest` tag on default-branch pushes; sha tag gets a `sha-` prefix for clarity.
+- `npm install` in CI's test-frontend job switched to `npm ci` (lockfile-strict).
+- `docker-compose.prod.yml`'s caddy service now reads `.env` so `DOMAIN` and `TLS_MODE` flow through.
+- Bumped `cryptography` (>=46.0.7), `python-multipart` (>=0.0.27), `pytest` (>=9.0.3) to address known CVEs.
 
 ### Removed
 

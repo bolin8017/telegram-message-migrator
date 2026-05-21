@@ -2,6 +2,8 @@
 
 Thanks for your interest in contributing!
 
+The hosted instance is at <https://tgmigrate.com>. Please don't load-test it — use a local copy or your own deployment for stress testing.
+
 ## Setup
 
 ```bash

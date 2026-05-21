@@ -2,10 +2,12 @@
 
 A self-hosted tool for migrating messages between two Telegram accounts. Log into both accounts, browse chats, and bulk-transfer messages with real-time progress tracking.
 
+> **Hosted instance:** A public instance runs at <https://tgmigrate.com>. There is no registration — log in directly with your Telegram account. Self-host if you prefer running your own copy.
+
 ## Features
 
 - **Forward / Copy modes** — forward messages (fast, keeps metadata) or copy as new messages (no "Forwarded from" label)
-- **Real-time progress** — SSE-powered live progress bar with pause/resume and checkpoint recovery
+- **Real-time progress** — SSE-powered live progress bar with pause/resume
 - **Live monitoring** — watch new messages arrive and auto-forward in real time
 - **Multi-user support** — optional multi-user mode for shared deployments with per-user encryption
 - **Self-hosted** — runs entirely on your own server; no third-party services, no message storage
@@ -35,15 +37,28 @@ Each user provides their own Telegram API credentials and logs in independently.
 
 ## Production Deployment
 
-Deploy with Caddy as a reverse proxy for automatic HTTPS:
+The hosted instance at <https://tgmigrate.com> runs on:
 
-```bash
-cp .env.example .env
-# Edit .env: set credentials + DOMAIN=yourdomain.com
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
-```
+- **GCP e2-micro** (free tier eligible in `us-west1` / `us-central1` / `us-east1`)
+- **Caddy** at the origin for automatic HTTPS via Let's Encrypt
+- **Cloudflare** as DNS + edge proxy (orange cloud)
 
-Caddy auto-provisions and renews TLS certificates via Let's Encrypt. The app runs behind the reverse proxy with resource limits (1 CPU, 512 MB RAM).
+To replicate on your own domain:
+
+1. Provision a VM and DNS. See [`scripts/gcp-bootstrap.md`](scripts/gcp-bootstrap.md) for the full `gcloud` and Cloudflare walk-through.
+2. On the VM, set `.env`:
+   ```env
+   DOMAIN=yourdomain.com
+   CORS_ORIGINS=https://yourdomain.com
+   SINGLE_USER_MODE=false
+   SERVER_SECRET=<32+ chars>
+   ```
+3. Deploy:
+   ```bash
+   ./scripts/deploy.sh
+   ```
+
+Caddy auto-provisions and renews TLS certificates. The app runs behind the reverse proxy with resource limits (1 CPU, 512 MB RAM). Cloudflare's edge ranges are pre-configured in [`caddy/Caddyfile`](caddy/Caddyfile) so logs see real client IPs.
 
 CI/CD is available via GitHub Actions — pushes to `main` build and publish a container image to GHCR.
 
@@ -83,6 +98,7 @@ Run backend and frontend in separate terminals during development.
 - **Encryption**: Telegram sessions encrypted at rest with AES-256-GCM; per-user keys derived via HKDF
 - **No message storage**: messages are streamed through the server, never persisted
 - **Open source**: full codebase available for audit
+- **Vulnerability reports**: see [SECURITY.md](SECURITY.md)
 
 ## License
 

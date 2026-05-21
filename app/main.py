@@ -1,6 +1,7 @@
 import asyncio
 import logging
 import logging.handlers
+import os
 import time
 from contextlib import asynccontextmanager
 from datetime import UTC, datetime
@@ -128,14 +129,18 @@ async def lifespan(app: FastAPI):
 
 app = FastAPI(title="Telegram Message Migrator", lifespan=lifespan)
 
-# CORS — only allow requests from our own domain and local dev
+
+def _parse_cors_origins(env_value: str | None) -> list[str]:
+    if env_value is None:
+        return ["http://localhost:5173", "http://localhost:8000"]
+    return [o.strip() for o in env_value.split(",") if o.strip()]
+
+
+_allowed_origins = _parse_cors_origins(os.getenv("CORS_ORIGINS"))
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "https://tgmigrate.com",
-        "http://localhost:5173",  # Vite dev server
-        "http://localhost:8000",
-    ],
+    allow_origins=_allowed_origins,
     allow_credentials=True,
     allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type"],

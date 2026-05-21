@@ -1,6 +1,7 @@
 services:
   app:
-    image: ghcr.io/user/telegram-message-migrator:latest
+    image: ghcr.io/bolin8017/telegram-message-migrator:latest
+    pull_policy: always
     build: .
     ports:
       - "${PORT:-8000}:8000"

@@ -20,8 +20,9 @@ else
     echo "WARNING: DOMAIN not set in .env — Caddy will serve on localhost (no HTTPS)"
 fi
 
-echo "=== Building and starting containers ==="
-docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+echo "=== Pulling latest image and starting containers ==="
+docker compose -f docker-compose.yml -f docker-compose.prod.yml pull
+docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
 
 echo "=== Waiting for health check ==="
 sleep 5

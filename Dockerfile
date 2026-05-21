@@ -11,7 +11,7 @@ RUN npm run build
 # Vite outputs to ../app/static/dist → /build/app/static/dist
 
 # Stage 2: Install Python dependencies
-FROM python:3.12-slim AS python-builder
+FROM python:3.14-slim AS python-builder
 
 WORKDIR /build
 
@@ -20,7 +20,7 @@ COPY app/ app/
 RUN pip install --no-cache-dir --prefix=/install .
 
 # Stage 3: Production runtime
-FROM python:3.12-slim
+FROM python:3.14-slim
 
 RUN groupadd --system app && useradd --system --gid app --create-home app
 

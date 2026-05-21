@@ -1,5 +1,10 @@
 # Telegram Message Migrator
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+[![CI](https://github.com/bolin8017/telegram-message-migrator/actions/workflows/ci.yml/badge.svg)](https://github.com/bolin8017/telegram-message-migrator/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11+-blue.svg)](https://www.python.org/downloads/)
+[![GHCR](https://ghcr-badge.egpl.dev/bolin8017/telegram-message-migrator/latest_tag?label=image&trim=major)](https://github.com/bolin8017/telegram-message-migrator/pkgs/container/telegram-message-migrator)
+
 A self-hosted tool for migrating messages between two Telegram accounts. Log into both accounts, browse chats, and bulk-transfer messages with real-time progress tracking.
 
 > **Hosted instance:** A public instance runs at <https://tgmigrate.com>. There is no registration — log in directly with your Telegram account. Self-host if you prefer running your own copy.

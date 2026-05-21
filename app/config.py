@@ -17,6 +17,7 @@ class Settings(BaseSettings):
     # App
     log_level: str = "INFO"
     log_file: Path | None = None
+    log_format: str = "text"  # "text" or "json"
 
     # Multi-user limits
     max_user_contexts: int = 50

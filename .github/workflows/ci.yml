@@ -30,7 +30,10 @@ jobs:
         with:
           python-version: "3.12"
           cache: pip
-      - run: pip install -e ".[dev]"
+      - run: pip install -U pip
+      - run: pip install -e ".[dev]" pip-audit
+      - name: pip-audit (Python dependency CVEs)
+        run: pip-audit --skip-editable
       - run: pytest tests/ -v
         env:
           TELEGRAM_API_ID: "12345"

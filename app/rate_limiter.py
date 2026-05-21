@@ -77,7 +77,7 @@ class RateLimiter:
         # Add jitter for human-like timing variation.
         # random.random() gives uniform [0, 1], so delay is [0, base * jitter].
         # Combined with token bucket (~base_delay), total is ~[base, base*(1+jitter)].
-        jitter_delay = cfg.base_delay * cfg.jitter * random.random()
+        jitter_delay = cfg.base_delay * cfg.jitter * random.random()  # nosec B311 - timing jitter, not security
         if jitter_delay > 0:
             await asyncio.sleep(jitter_delay)
 
@@ -102,14 +102,14 @@ class RateLimiter:
 
         # Long pause every N messages
         if self._batch_counter % s.long_pause_interval == 0:
-            pause = random.uniform(s.long_pause_min, s.long_pause_max)
+            pause = random.uniform(s.long_pause_min, s.long_pause_max)  # nosec B311 - timing jitter, not security
             await asyncio.sleep(pause)
             return True
 
         # Regular batch cooldown
         if self._batch_counter % s.batch_size == 0:
             jitter = s.batch_cooldown * s.batch_cooldown_jitter
-            cooldown = s.batch_cooldown + random.uniform(-jitter, jitter)
+            cooldown = s.batch_cooldown + random.uniform(-jitter, jitter)  # nosec B311 - timing jitter, not security
             await asyncio.sleep(max(1, cooldown))
             return True
 

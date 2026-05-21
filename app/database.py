@@ -145,7 +145,8 @@ async def update_transfer_status(
             sets.append(f"{col} = ?")
             vals.append(counters[col])
     vals.append(transfer_id)
-    await db.execute(f"UPDATE transfers SET {', '.join(sets)} WHERE id = ?", vals)
+    # sets contents are fixed column names from a literal allowlist; user values use ? placeholders.
+    await db.execute(f"UPDATE transfers SET {', '.join(sets)} WHERE id = ?", vals)  # nosec B608
     await db.commit()
 
 
@@ -316,8 +317,9 @@ async def upgrade_session_user_id(
         sets.append("encrypted_session_b = ?")
         vals.append(encrypted_session_b)
     vals.append(session_token_hash)
+    # sets contents are fixed column names from a literal allowlist; user values use ? placeholders.
     await db.execute(
-        f"UPDATE user_sessions SET {', '.join(sets)} WHERE session_token_hash = ?",
+        f"UPDATE user_sessions SET {', '.join(sets)} WHERE session_token_hash = ?",  # nosec B608
         vals,
     )
     await db.commit()
@@ -346,8 +348,9 @@ async def update_session_data(
     sets.append("last_active = ?")
     vals.append(_now())
     vals.append(session_token_hash)
+    # sets contents are fixed column names from a literal allowlist; user values use ? placeholders.
     await db.execute(
-        f"UPDATE user_sessions SET {', '.join(sets)} WHERE session_token_hash = ?",
+        f"UPDATE user_sessions SET {', '.join(sets)} WHERE session_token_hash = ?",  # nosec B608
         vals,
     )
     await db.commit()

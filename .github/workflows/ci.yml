@@ -49,7 +49,7 @@ jobs:
           node-version: "20"
           cache: npm
           cache-dependency-path: frontend/package-lock.json
-      - run: cd frontend && npm ci
+      - run: cd frontend && npm install --no-audit --no-fund
       - name: audit-ci (npm production deps, high+ threshold)
         run: cd frontend && npx --yes audit-ci@^7 --high --skip-dev
       - run: cd frontend && npx tsc -b

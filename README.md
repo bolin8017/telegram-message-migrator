@@ -110,6 +110,10 @@ Run backend and frontend in separate terminals during development.
 - **Open source**: full codebase available for audit
 - **Vulnerability reports**: see [SECURITY.md](SECURITY.md)
 
+## Operations
+
+See [OPERATIONS.md](OPERATIONS.md) for deploy / restart / backup / restore procedures and common-incident playbooks.
+
 ## License
 
 MIT

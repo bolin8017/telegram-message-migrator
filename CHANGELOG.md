@@ -16,6 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 - CI security scans: Bandit (Python SAST), pip-audit (Python deps), audit-ci (npm production deps), Trivy (container image). Severity gates set to high/critical block, lower tolerated.
 - CI now enforces Conventional Commits 1.0.0 for PR titles via amannn/action-semantic-pull-request.
 - `TLS_MODE` env var so the same Caddyfile supports auto Let's Encrypt (self-host) and `tls internal` (behind Cloudflare proxy).
+- `OPERATIONS.md` runbook covering deploy / restart / backup / restore / incident playbooks.
+- `scripts/backup.sh` for crash-consistent SQLite backups (via `VACUUM INTO`) plus sessions tarball; retention configurable via `RETENTION_DAYS`.
+- `LOG_FORMAT` env var for optional JSON-structured logs (`text` remains the default).
 
 ### Changed
 

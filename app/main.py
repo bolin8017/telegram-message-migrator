@@ -21,15 +21,42 @@ from .routes import setup as setup_routes
 from .routes import user as user_routes
 
 
+class _JsonFormatter(logging.Formatter):
+    """Minimal JSON log formatter (one-line JSON per record)."""
+
+    def format(self, record: logging.LogRecord) -> str:
+        import json
+
+        payload: dict[str, object] = {
+            "ts": self.formatTime(record, "%Y-%m-%dT%H:%M:%S%z"),
+            "level": record.levelname,
+            "logger": record.name,
+            "message": record.getMessage(),
+        }
+        if record.exc_info:
+            payload["exc_info"] = self.formatException(record.exc_info)
+        return json.dumps(payload, ensure_ascii=False)
+
+
 def _setup_logging() -> None:
-    """Configure structured logging with optional file output."""
+    """Configure logging. Text or JSON output via LOG_FORMAT env."""
     s = get_settings()
-    fmt = "%(asctime)s %(levelname)-8s %(name)s  %(message)s"
+    formatter: logging.Formatter
+    if s.log_format.lower() == "json":
+        formatter = _JsonFormatter()
+    else:
+        formatter = logging.Formatter("%(asctime)s %(levelname)-8s %(name)s  %(message)s")
     handlers: list[logging.Handler] = [logging.StreamHandler()]
     if s.log_file:
         s.log_file.parent.mkdir(parents=True, exist_ok=True)
         handlers.append(logging.handlers.RotatingFileHandler(s.log_file, maxBytes=10_000_000, backupCount=3))
-    logging.basicConfig(level=s.log_level.upper(), format=fmt, handlers=handlers, force=True)
+    for h in handlers:
+        h.setFormatter(formatter)
+    root = logging.getLogger()
+    root.handlers.clear()
+    for h in handlers:
+        root.addHandler(h)
+    root.setLevel(s.log_level.upper())
     # Quiet noisy libraries
     logging.getLogger("telethon").setLevel(logging.WARNING)
     logging.getLogger("aiosqlite").setLevel(logging.WARNING)
